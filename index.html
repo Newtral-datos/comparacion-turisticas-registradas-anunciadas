@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Interactivo de Alquiler</title>
+
+  <script src="https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.1.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/pmtiles@3.0.7/dist/pmtiles.js"></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.5.0/dist/maplibre-gl-geocoder.min.js"></script>
+  <link href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.5.0/dist/maplibre-gl-geocoder.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+  <style>
+    :root { --accent: #01f3b3; --shadow: 0 4px 12px rgba(0,0,0,0.15); --bg-barra: #f4f4f4; }
+    body, html { margin: 0; padding: 0; font-family: system-ui, sans-serif; height: 100%; overflow: hidden; }
+    #map { position: absolute; inset: 0; z-index: 1; }
+
+    /* MENU INICIAL */
+    #mode-selector {
+      position: absolute; inset: 0; background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(10px); z-index: 6000; display: flex;
+      justify-content: center; align-items: center; gap: 20px;
+    }
+    .btn-mode {
+      background: white; padding: 25px; border-radius: 15px; cursor: pointer;
+      width: 260px; text-align: center; box-shadow: var(--shadow); border: 1px solid #eee;
+    }
+
+    /* BOTÓN VOLVER */
+    .back-btn {
+      position: absolute; top: 15px; left: 20px; z-index: 5000;
+      background: white; border: 1px solid #bbb; padding: 10px 18px;
+      border-radius: 999px; cursor: pointer; display: none; font-weight: 700;
+    }
+
+    /* --- 1. BASE Y ESCRITORIO (POR DEFECTO) --- */
+    #free-nav-ui {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 75px; 
+        z-index: 3000;
+        background: #f4f4f4;
+        border-bottom: 1px solid #ccc;
+        display: none; /* Se activa con JS */
+        
+        /* Alineación en PC: Todo en una fila horizontal */
+        flex-direction: row; 
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    /* Forzar que el buscador sea largo en PC */
+    #geocoder-container {
+        width: 650px !important;
+    }
+    
+    /* Quitar límites internos de la librería para que el buscador se estire */
+    .maplibregl-ctrl-geocoder {
+        max-width: none !important;
+        width: 100% !important;
+        box-shadow: none !important;
+    }
+    
+    /* Contenedor de emojis: Siempre en fila */
+    .botones-extra {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        align-items: center;
+        flex-shrink: 0; /* Evita que se aplasten */
+    }
+    
+    .botones-extra button {
+        border: none;
+        background: none;
+        font-size: 1.8rem;
+        cursor: pointer;
+    }
+
+    /* --- LEYENDA (ESCRITORIO Y GENERAL) --- */
+    .legend-container {
+        position: absolute;
+        top: 85px; 
+        right: 20px;
+        width: 280px;
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        z-index: 4000;
+        display: none;
+    }
+
+    .legend-bar {
+        height: 12px;
+        width: 100%;
+        background: linear-gradient(to right, 
+            #007959 0%,   /* Verde Intenso */
+            #CCEBC8 40%,  /* Verde claro */
+            #fefcef 50%,  /* Neutro */
+            #fee2e2 60%,  /* Rojo claro */
+            #7f1d1d 100%  /* Rojo Intenso */
+        );
+        border-radius: 4px;
+        border: 1px solid #eee;
+    }
+
+    .legend-labels {
+        display: flex;
+        justify-content: space-between; /* Esto empuja los textos a los extremos */
+        margin-top: 6px;
+        font-size: 10px;
+        color: #444;
+        font-weight: 600;
+    }
+
+    /* Forzamos que el segundo span se alinee a la derecha internamente si fuera necesario */
+    .legend-labels span:last-child {
+        text-align: right;
+    }
+
+
+    /* --- 2. AJUSTES PARA MÓVIL (PANTALLAS PEQUEÑAS) --- */
+    @media (max-width: 600px) {
+      /* Menú inicial: botones uno encima de otro */
+      #mode-selector {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .btn-mode { width: 85%; }
+      
+      /* Botón volver: posición fija abajo */
+      .back-btn { 
+        top: auto !important; 
+        bottom: 25px !important; 
+        left: 15px !important; 
+        padding: 4px 10px !important; /* Más pequeño */
+        font-size: 0.7rem !important;  /* Fuente más pequeña */
+        border-radius: 20px !important;
+      }
+      
+      /* Barra de búsqueda en móvil: Buscador arriba y Emojis abajo */
+      #free-nav-ui {
+        height: auto;
+        padding: 10px 0;
+        flex-direction: column; /* Apilado vertical */
+        gap: 8px;
+      }
+      
+      /* Buscador ocupa el ancho del móvil */
+      #geocoder-container {
+        width: 92% !important;
+      }
+      
+      /* Emojis: Se mantienen juntos en horizontal debajo del buscador */
+      .botones-extra {
+        width: 100%;
+        justify-content: center;
+        margin-top: 2px;
+      }
+
+      /* Ajustes de la leyenda en el móvil */
+      .legend-container {
+        top: 130px; 
+        right: 50%;
+        transform: translateX(50%); 
+        width: 270px; 
+        padding: 8px;
+      }
+    
+      .legend-labels {
+        font-size: 9px;
+      }
+    }
+    </style>
+</head>
+<body>
+  
+  <button id="backToMenu" class="back-btn">← Volver al menú</button>
+
+  <div id="mode-selector">
+    <div class="btn-mode" onclick="startMode('tour')">
+      <h2>Vista guiada</h2>
+      <p style="font-size: 0.85em; color: #666;">por los casos más llamativos</p>
+    </div>
+    <div class="btn-mode" onclick="startMode('free')">
+      <h2>Navegar libremente</h2>
+      <p style="font-size: 0.85em; color: #666;">explora todo el mapa</p>
+    </div>
+  </div>
+
+  <div id="tour-ui">
+    <div id="tour-content" class="tour-box">
+      <div id="tour-inner-text"></div>
+      <div class="tour-nav">
+        <button class="nav-arrow" id="prevStep">❮</button>
+        <button class="nav-arrow" id="nextStep">❯</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="free-nav-ui">
+    <div id="geocoder-container"></div>
+    <div class="botones-extra">
+        <button id="randomLocation" title="Municipio al azar">🎲</button>
+        <button id="toggleCanarias" title="Ir a Canarias">🇮🇨</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="map-legend" class="legend-container">
+      <div class="legend-bar"></div>
+      <div class="legend-labels">
+          <span><b>Más registradas</b> que anunciadas</span>
+          <span></span>
+          <span><b>Más anunciadas</b> que registradas</span>
+      </div>
+  </div> 
+  
+  <script src="config2.js"></script>
+</body>
+</html>
