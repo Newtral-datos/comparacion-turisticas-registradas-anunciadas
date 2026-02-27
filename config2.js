@@ -17,8 +17,34 @@ const CONFIG = {
         canarias: { center: [-15.7, 28.3], zoom: 7 }
     },
     tourSteps: [
-        { center: [-3.7038, 40.4168], zoom: 12, text: "Madrid presenta la mayor saturación de anuncios frente a registros oficiales.", pos: { top: '30%', left: '50%' } },
-        { center: [2.1734, 41.3851], zoom: 13, text: "Barcelona ha implementado medidas drásticas en Ciutat Vella.", pos: { bottom: '25%', right: '10%' } }
+        { center: [-3.7038, 40.4168], 
+            zoom: 5.5, 
+            text: "El INE localizó n noviembre de 2025 329.764 anuncios de pisos turísticos repartidos en 5.179 municipios de España.", 
+            pos: { top: '30%', left: '50%' } },
+        { center: [-3.7038, 40.4168], 
+            zoom: 5.5, 
+            text: "Desde julio de ese mismo año, es obligatorio que todos estos pisos estén inscritos en un registro del Ministerio de Vivienda. Sin embargo, en noviembre el número de viviendas registradas era de 208.477, 121.287 menos de las detectadas por el INE el mismo mes.", 
+            pos: { top: '30%', left: '50%' } },
+        { center: [-3.7038, 40.4168], 
+            zoom: 9, 
+            text: "Madrid es la ciudad que presenta una mayor diferencia entre el número de viviendas turísticas anunciadas en plataformas digitales y las registradas, con 11.729 anuncios más de los que cabría esperar.", 
+            pos: { top: '20%', left: '50%' } },
+        { center: [2.1734, 41.3851], 
+            zoom: 9, 
+            text: "En Barcelona, la diferencia entre el número de pisos anunciados y registrados se sitúa en 1.352.", 
+            pos: { bottom: '25%', right: '10%' } },
+        { center: [-4.416667, 36.716667], 
+            zoom: 10, 
+            text: "Málaga es la segunda ciudad con mayor número de pisos turísticos, con 8.638. Sin embargo, el registro del Ministerio de Vivienda indica que son 6.986 las viviendas que cuentan con una licencia en el municipio.", 
+            pos: { bottom: '25%', right: '10%' } },
+        { center: [1.13163, 41.07964], 
+            zoom: 10, 
+            text: "También se dan casos donde hay más licencias que viviendas anunciadas. El más llamativo es el de Salou (Tarragona), donde el Ministerio recoge 2.506 permisos frente a los 2.157 anuncios que había en plataformas.", 
+            pos: { bottom: '25%', right: '10%' } },
+        { center: [-15.7, 28.3], 
+            zoom: 7, 
+            text: "Las Islas Canarias destacan por la elevada presencia de viviendas turísticas sin registrar. Arrecife (Lanzarote) es el único de sus municipios en el que el número de viviendas registradas supera a las anunciadas.", 
+            pos: { bottom: '25%', right: '10%' } }
     ]
 };
 
